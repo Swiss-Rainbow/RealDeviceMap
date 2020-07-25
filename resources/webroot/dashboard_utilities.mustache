@@ -33,6 +33,14 @@
                     onclick="return confirm('Are you sure that you want to delete {{stale_pokestops}} stale Pokestops that haven\'t been seen in the last 25 hours?');">
                     Delete Stale Pokestops {{#stale_pokestops}}({{stale_pokestops}} Not seen last 25 hours){{/stale_pokestops}}
                 </button>
+				<button type="submit" name="action" value="convert_rw" class="list-group-item list-group-item-action list-group-item-warning"
+					onclick="return confirm('Are you sure that you want to delete {{will_remove_rw}} Warning with more than 7 days?');">
+					Delete Warnings {{#will_remove_rw}}({{will_remove_rw}} with more than 7 days){{/will_remove_rw}}
+				</button>
+					<button type="submit" name="action" value="convert_ban" class="list-group-item list-group-item-action list-group-item-danger"
+					onclick="return confirm('Are you sure that you want to delete {{will_remove_ban}} Bans with more than 30 days?');">
+					Delete Bans {{#will_remove_ban}}({{will_remove_ban}} with more than 30 days){{/will_remove_ban}}
+				</button>
                 <input type="hidden" name="_csrf" value="{{csrf}}">
             </form>
         </div>
