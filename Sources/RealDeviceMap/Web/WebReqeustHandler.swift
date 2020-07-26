@@ -1277,13 +1277,9 @@ class WebReqeustHandler {
             data["page"] = "Dashboard - Utilities"
 
             let convertiblePokestopsCount = try? Pokestop.getConvertiblePokestopsCount()
-            let stalePokestopsCount = try? Pokestop.getStalePokestopsCount()
-			let convertRWCount = try? Account.convertRWCount()
-            let convertBanCount = try? Account.convertBanCount()
+            let stalePokestopsCount = try? Pokestop.getStalePokestopsCount())
             data["convertible_pokestops"] = convertiblePokestopsCount
             data["stale_pokestops"] = stalePokestopsCount
-			data["will_remove_rw"] = convertRWCount
-            data["will_remove_ban"] = convertBanCount
 
             if request.method == .post {
                 let action = request.param(name: "action")
@@ -1317,27 +1313,7 @@ class WebReqeustHandler {
                         data["show_error"] = true
                         data["error"] = "Failed to delete stale Pokestops."
                     }
-                default:
-                    break
-				case "convert_rw":
-                    let result = try? Account.convertRW()
-                    if result! >= 0 {
-                        data["show_success"] = true
-                        data["success"] = "\((result ?? 0).description) Warning removed!"
-                    } else {
-                        data["show_error"] = true
-                        data["error"] = "Failed to delete Warnings."
-                    }
-                    break
-                case "convert_ban":
-                    let result = try? Account.convertBan()
-                    if result! >= 0 {
-                        data["show_success"] = true
-                        data["success"] = "\((result ?? 0).description) Bans removed!"
-                    } else {
-                        data["show_error"] = true
-                        data["error"] = "Failed to delete bans."
-                    }
+				default:
                     break
                 }
             }

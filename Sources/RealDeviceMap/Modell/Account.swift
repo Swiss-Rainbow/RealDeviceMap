@@ -907,17 +907,14 @@ class Account: WebHookEvent {
         let sql = """
             SELECT
               SUM(
-                failed_timestamp >= UNIX_TIMESTAMP(NOW() - INTERVAL 7 DAY) AND failed IN('banned', 'GPR_BANNED')
-              ) as banned_7days,
+                failed='banned' AND failed_timestamp >= UNIX_TIMESTAMP(NOW() - INTERVAL 1 DAY)) as banned_7days,
               SUM(
-                failed_timestamp >= UNIX_TIMESTAMP(NOW() - INTERVAL 14 DAY) AND failed IN('banned', 'GPR_BANNED')
-              ) as banned_14days,
+                failed='banned' AND failed_timestamp >= UNIX_TIMESTAMP(NOW() - INTERVAL 7 DAY)) as banned_14days,
               SUM(
-                failed_timestamp >= UNIX_TIMESTAMP(NOW() - INTERVAL 30 DAY) AND failed IN('banned', 'GPR_BANNED')
-              ) as banned_30days,
+                failed='banned' AND failed_timestamp) as banned_30days,
               SUM(first_warning_timestamp >= UNIX_TIMESTAMP(NOW() - INTERVAL 7 DAY)) as warning_7days,
-              SUM(first_warning_timestamp >= UNIX_TIMESTAMP(NOW() - INTERVAL 14 DAY)) as warning_14days,
-              SUM(first_warning_timestamp >= UNIX_TIMESTAMP(NOW() - INTERVAL 30 DAY)) as warning_30days
+              SUM(first_warning_timestamp >= UNIX_TIMESTAMP(NOW() - INTERVAL 7 DAY)) as warning_14days,
+              SUM(first_warning_timestamp) as warning_30days
             FROM account
         """
 
