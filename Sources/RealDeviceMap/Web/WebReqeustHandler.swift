@@ -1277,7 +1277,7 @@ class WebReqeustHandler {
             data["page"] = "Dashboard - Utilities"
 
             let convertiblePokestopsCount = try? Pokestop.getConvertiblePokestopsCount()
-            let stalePokestopsCount = try? Pokestop.getStalePokestopsCount())
+            let stalePokestopsCount = try? Pokestop.getStalePokestopsCount()
             data["convertible_pokestops"] = convertiblePokestopsCount
             data["stale_pokestops"] = stalePokestopsCount
 

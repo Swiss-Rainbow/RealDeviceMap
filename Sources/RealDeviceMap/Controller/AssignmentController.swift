@@ -22,7 +22,8 @@ class AssignmentController: InstanceControllerDelegate {
 
     private init() {}
 
-    public func setup() throws {
+    // swiftlint:disable:next function_body_length
+	public func setup() throws {
 
         assignmentsLock.lock()
         assignments = try Assignment.getAll()
@@ -39,6 +40,18 @@ class AssignmentController: InstanceControllerDelegate {
                 let mysql = DBController.global.mysql
 
                 var lastUpdate: Int32 = -2
+				let lastUpdatedFile = File("\(projectroot)/backups/last-updated.txt")
+                if lastUpdatedFile.exists {
+                    do {
+                        try lastUpdatedFile.open(.read)
+                        if let contents = try lastUpdatedFile.readString().toInt32() {
+                            lastUpdate = contents
+                        }
+                        lastUpdatedFile.close()
+                    } catch {
+                        Log.error(message: "Failed to read last updated from file: \(error.localizedDescription)")
+                    }
+                }
 
                 while true {
 
@@ -57,9 +70,7 @@ class AssignmentController: InstanceControllerDelegate {
 
                     for assignment in assignments {
 
-                        if assignment.enabled &&
-                           assignment.time != 0 &&
-                           (assignment.date == nil || assignment.date!.toString() == Date().toString()) &&
+                        if assignment.time != 0 &&
                            now >= assignment.time &&
                            lastUpdate < assignment.time {
                             self.triggerAssignment(mysql: mysql, assignment: assignment)
@@ -69,7 +80,13 @@ class AssignmentController: InstanceControllerDelegate {
 
                     Threading.sleep(seconds: 5)
                     lastUpdate = Int32(now)
-
+					do {
+                        try lastUpdatedFile.open(.write)
+                        try lastUpdatedFile.write(string: lastUpdate.toString())
+                        lastUpdatedFile.close()
+                    } catch {
+                        Log.error(message: "Failed to store last updated to file: \(error.localizedDescription)")
+                    }
                 }
 
             }
@@ -99,6 +116,11 @@ class AssignmentController: InstanceControllerDelegate {
     }
 
     public func triggerAssignment(mysql: MySQL?=nil, assignment: Assignment, force: Bool=false) {
+		guard force || (
+            assignment.enabled && (assignment.date == nil || assignment.date!.toString() == Date().toString())
+        ) else {
+			return
+		}	
         var devices = [Device]()
         if let deviceUUID = assignment.deviceUUID {
             var done = false
@@ -173,13 +195,10 @@ class AssignmentController: InstanceControllerDelegate {
     // MARK: - InstanceControllerDelegate
 
     public func instanceControllerDone(mysql: MySQL?, name: String) {
-        for assignment in assignments {
-            if assignment.enabled && assignment.time == 0 &&
-                (assignment.date == nil || assignment.date!.toString() == Date().toString()) {
-                triggerAssignment(mysql: mysql, assignment: assignment)
-                return
-            }
+                for assignment in assignments where (
+            assignment.time == 0 && (assignment.sourceInstanceName == nil || assignment.sourceInstanceName == name)
+        ) {
+            triggerAssignment(mysql: mysql, assignment: assignment)
         }
-
     }
 }
