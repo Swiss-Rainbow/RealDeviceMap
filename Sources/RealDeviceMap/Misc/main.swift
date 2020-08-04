@@ -166,12 +166,6 @@ MailController.fromName = try! DBController.global.getValueForKey(key: "MAILER_N
 MailController.footerHtml = try! DBController.global.getValueForKey(key: "MAILER_FOOTER_HTML") ?? ""
 MailController.baseURI = try! DBController.global.getValueForKey(key: "MAILER_BASE_URI") ?? ""
 
-let webhookDelayString = try! DBController.global.getValueForKey(key: "WEBHOOK_DELAY") ?? "5.0"
-let webhookUrlStrings = try! DBController.global.getValueForKey(key: "WEBHOOK_URLS") ?? ""
-if let webhookDelay = Double(webhookDelayString) {
-    WebHookController.global.webhookSendDelay = webhookDelay
-}
-
 // Init Instance Contoller
 do {
     Log.info(message: "[MAIN] Starting Instance Controller")
@@ -210,9 +204,6 @@ WebReqeustHandler.avilableItemJson = try! aviableItems.jsonEncodedString()
 
 Log.info(message: "[MAIN] Getting PVP Stats")
 _ = PVPStatsManager.global
-
-Log.info(message: "[MAIN] Starting Webhook")
-WebHookController.global.webhookURLStrings = webhookUrlStrings.components(separatedBy: ";")
 
 Log.info(message: "[MAIN] Starting Account Controller")
 AccountController.global.setup()

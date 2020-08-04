@@ -1,0 +1,62 @@
+{{> header}}
+
+<style>
+    table.dataTable tbody td {
+        vertical-align: middle;
+    }
+</style>
+
+<script>
+	$(document).ready(function() {
+		$('#table').DataTable( {
+			"ajax": {
+				"url": "/api/get_data?show_webhooks=true&formatted=true",
+				"dataSrc": "data.webhooks"
+			},
+			"paging":   true,
+			"lengthMenu": [[25, 50, 100, -1], [25, 50, 100, "All"]],
+			"columns": [
+				{ "data": "name" },
+				{ "data": "url" },
+                { "data": "delay" },
+                { "data": "types" },
+                { "data": "enabled" },
+                { "data": "buttons" }
+            ],
+			"info":     false,
+			"order": [[ 1, "asc" ]],
+            "columnDefs": [ {
+				"targets": [5],
+				"orderable": false
+			}],
+			"search.caseInsensitive": true,
+            "responsive": true
+		});
+	} );
+</script>
+
+<body>
+
+    <br>
+    <h1 align="center">Configure {{title}}'s Webhooks!</h1>
+    <br>
+    <div style="width:90%; margin-left:calc(5%);">
+        <a href="/dashboard/webhook/add" role="button" style="float: right;" class="btn btn-success">Add New Webhook</a>
+        <br><br>
+        <table id="table" class="table table-striped table-bordered dt-responsive nowrap" style="position: center; width:100%">
+            <thead>
+            <tr>
+                <th>Name</th>
+                <th>Url</th>
+                <th>Delay</th>
+                <th>Type(s)</th>
+                <th>Enabled</td>
+                <th width="5%"></th>
+            </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+    </div>
+    <br>
+</body>
