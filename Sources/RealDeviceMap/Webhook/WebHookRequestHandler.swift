@@ -37,12 +37,8 @@ class WebHookRequestHandler {
     static let threadLimitMax = UInt32(ProcessInfo.processInfo.environment["RAW_THREAD_LIMIT"] ?? "") ?? 100
     private static let threadLimitLock = Threading.Lock()
     private static var threadLimitCount: UInt32 = 0
-    internal static var threadLimitCurrent: UInt32 {
-        threadLimitLock.lock()
-        let count = threadLimitCount
-        threadLimitLock.unlock()
-        return count
-    }
+    private static var threadLimitTotalCount: UInt64 = 0
+    private static var threadLimitIgnoredCount: UInt64 = 0
 
     private static let loginLimit = UInt32(ProcessInfo.processInfo.environment["LOGINLIMIT_COUNT"] ?? "")
     private static let loginLimitIntervall = UInt32(
@@ -51,6 +47,16 @@ class WebHookRequestHandler {
     private static let loginLimitLock = Threading.Lock()
     private static var loginLimitTime = [String: UInt32]()
     private static var loginLimitCount = [String: UInt32]()
+
+    // swiftlint:disable:next large_tuple
+    internal static func getThreadLimits() -> (current: UInt32, total: UInt64, ignored: UInt64) {
+        threadLimitLock.lock()
+        let current = threadLimitCount
+        let total = threadLimitTotalCount
+        let ignored = threadLimitIgnoredCount
+        threadLimitLock.unlock()
+        return (current: current, total: total, ignored: ignored)
+    }
 
     static func handle(request: HTTPRequest, response: HTTPResponse, type: WebHookServer.Action) {
 
@@ -480,6 +486,8 @@ class WebHookRequestHandler {
 
             threadLimitLock.lock()
             if threadLimitCount >= threadLimitMax {
+                threadLimitIgnoredCount += 1
+                threadLimitTotalCount += 1
                 threadLimitLock.unlock()
                 Log.warning(
                     message: "[WebHookRequestHandler] [\(uuid ?? "?")] Reached thread limit of \(threadLimitMax) " +
@@ -489,11 +497,16 @@ class WebHookRequestHandler {
             }
             let limitCount = threadLimitCount + 1
             threadLimitCount = limitCount
+            threadLimitTotalCount += 1
             threadLimitLock.unlock()
-            Log.info(
-                message: "[WebHookRequestHandler] [\(uuid ?? "?")] Processing /raw request. " +
-                         "Currently processing: \(limitCount)"
-            )
+            let percentage = Float(limitCount) / Float(threadLimitMax)
+            let message = "[WebHookRequestHandler] [\(uuid ?? "?")] Processing /raw request. " +
+                          "Currently processing: \(limitCount) (\(Int(percentage*100))%)"
+            if percentage >= 0.5 {
+                Log.info(message: message)
+            } else {
+                Log.debug(message: message)
+            }
 
             defer {
                 threadLimitLock.lock()
@@ -662,7 +675,7 @@ class WebHookRequestHandler {
                         pokemon = nil
                     }
                     if pokemon != nil {
-                        pokemon!.addEncounter(encounterData: encounter, username: username)
+                        pokemon!.addEncounter(mysql: mysql, encounterData: encounter, username: username)
                         try? pokemon!.save(mysql: mysql, updateIV: true)
                     } else {
                         let centerCoord = CLLocationCoordinate2D(latitude: encounter.wildPokemon.latitude,
@@ -681,7 +694,7 @@ class WebHookRequestHandler {
                                 cellId: cellID.uid,
                                 timestampMs: UInt64(Date().timeIntervalSince1970 * 1000),
                                 username: username)
-                            newPokemon.addEncounter(encounterData: encounter, username: username)
+                            newPokemon.addEncounter(mysql: mysql, encounterData: encounter, username: username)
                             try? newPokemon.save(mysql: mysql, updateIV: true)
                         }
                     }
@@ -872,7 +885,7 @@ class WebHookRequestHandler {
                     }
                     self.loginLimitCount[host] = currentCount + 1
                     self.loginLimitLock.unlock()
-                    Log.info(
+                    Log.debug(
                         message: "[WebHookRequestHandler] [\(uuid)] Login Limit for \(host): " +
                                  "\(currentCount + 1)/\(loginLimit) (\(left)s left)"
                     )
